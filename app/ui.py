@@ -43,17 +43,35 @@ def _font(size, weight="normal"):
     return ctk.CTkFont(family=FONT_FAMILY, size=size, weight=weight)
 
 
+# Shared column layout for the items grid so the header row and every item
+# row line up pixel-for-pixel (they are cells of the same grid, not separate
+# frames with independently-computed padding).
+ITEMS_COLUMNS = [
+    {"weight": 1, "minsize": 0},    # description
+    {"weight": 0, "minsize": 100},  # price
+    {"weight": 0, "minsize": 80},   # qty
+    {"weight": 0, "minsize": 100},  # total
+    {"weight": 0, "minsize": 84},   # remove button
+]
+
+
+def configure_items_grid(grid_parent):
+    for index, column in enumerate(ITEMS_COLUMNS):
+        grid_parent.grid_columnconfigure(
+            index, weight=column["weight"], minsize=column["minsize"]
+        )
+
+
 class ItemRow:
-    def __init__(self, parent, on_change, on_remove):
-        self.frame = ctk.CTkFrame(parent, fg_color="transparent")
-        self.frame.pack(fill="x", pady=4)
+    def __init__(self, parent, row_index, on_change, on_remove):
+        self.parent = parent
 
         self.description = ctk.StringVar()
         self.price = ctk.StringVar()
         self.qty = ctk.StringVar()
 
-        desc_entry = ctk.CTkEntry(
-            self.frame,
+        self.desc_entry = ctk.CTkEntry(
+            parent,
             textvariable=self.description,
             placeholder_text="Descrição do serviço",
             font=_font(13),
@@ -61,46 +79,38 @@ class ItemRow:
             border_color=BORDER,
             fg_color=SURFACE,
         )
-        desc_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
-        price_entry = ctk.CTkEntry(
-            self.frame,
+        self.price_entry = ctk.CTkEntry(
+            parent,
             textvariable=self.price,
-            placeholder_text="Preço",
-            width=90,
+            placeholder_text="0,00",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
         )
-        price_entry.pack(side="left", padx=4)
 
-        qty_entry = ctk.CTkEntry(
-            self.frame,
+        self.qty_entry = ctk.CTkEntry(
+            parent,
             textvariable=self.qty,
-            placeholder_text="Qtd",
-            width=70,
+            placeholder_text="0",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
         )
-        qty_entry.pack(side="left", padx=4)
 
         self.total_label = ctk.CTkLabel(
-            self.frame,
+            parent,
             text="$0.00",
-            width=90,
             anchor="e",
             font=_font(13, "bold"),
             text_color=NAVY,
         )
-        self.total_label.pack(side="left", padx=8)
 
-        remove_button = ctk.CTkButton(
-            self.frame,
+        self.remove_button = ctk.CTkButton(
+            parent,
             text="Remover",
-            width=72,
             height=28,
             font=_font(11),
             corner_radius=BUTTON_RADIUS,
@@ -111,11 +121,27 @@ class ItemRow:
             border_color=DANGER,
             command=lambda: on_remove(self),
         )
-        remove_button.pack(side="left", padx=(4, 0))
+
+        self.widgets = [
+            self.desc_entry,
+            self.price_entry,
+            self.qty_entry,
+            self.total_label,
+            self.remove_button,
+        ]
+        self.set_row(row_index)
 
         self.description.trace_add("write", lambda *_: on_change())
         self.price.trace_add("write", lambda *_: on_change())
         self.qty.trace_add("write", lambda *_: on_change())
+
+    def set_row(self, row_index):
+        pady = (0, 8)
+        self.desc_entry.grid(row=row_index, column=0, sticky="ew", padx=(0, 8), pady=pady)
+        self.price_entry.grid(row=row_index, column=1, sticky="ew", padx=4, pady=pady)
+        self.qty_entry.grid(row=row_index, column=2, sticky="ew", padx=4, pady=pady)
+        self.total_label.grid(row=row_index, column=3, sticky="e", padx=4, pady=pady)
+        self.remove_button.grid(row=row_index, column=4, sticky="w", padx=(4, 0), pady=pady)
 
     def as_dict(self):
         return {
@@ -134,7 +160,8 @@ class ItemRow:
         self.total_label.configure(text=f"${self.row_total():,.2f}")
 
     def destroy(self):
-        self.frame.destroy()
+        for widget in self.widgets:
+            widget.destroy()
 
 
 class InvoiceApp(ctk.CTk):
@@ -290,24 +317,20 @@ class InvoiceApp(ctk.CTk):
     def _build_items_section(self, parent):
         self._section_title(parent, "Itens")
 
-        columns = ctk.CTkFrame(parent, fg_color="transparent")
-        columns.pack(fill="x", padx=18, pady=(0, 2))
-        for text, width in (("Descrição", None), ("Preço", 90), ("Qtd", 70), ("Total", 90)):
-            label = ctk.CTkLabel(
-                columns,
+        self.items_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.items_container.pack(fill="x", padx=18)
+        configure_items_grid(self.items_container)
+
+        headers = ["Descrição", "Preço", "Qtd", "Total", ""]
+        alignments = ["w", "center", "center", "e", "w"]
+        for col, (text, anchor) in enumerate(zip(headers, alignments)):
+            ctk.CTkLabel(
+                self.items_container,
                 text=text,
                 font=_font(11, "bold"),
                 text_color=TEXT_SECONDARY,
-                width=width if width else 0,
-                anchor="w" if width is None else "center",
-            )
-            if width is None:
-                label.pack(side="left", fill="x", expand=True, padx=(0, 8))
-            else:
-                label.pack(side="left", padx=4)
-
-        self.items_container = ctk.CTkFrame(parent, fg_color="transparent")
-        self.items_container.pack(fill="x", padx=18)
+                anchor=anchor,
+            ).grid(row=0, column=col, sticky="ew", padx=4 if col else (0, 8), pady=(0, 4))
 
         ctk.CTkButton(
             parent,
@@ -358,7 +381,12 @@ class InvoiceApp(ctk.CTk):
         ).pack(side="left", fill="x", expand=True, padx=(8, 0))
 
     def _add_item_row(self):
-        row = ItemRow(self.items_container, self._recalculate_total, self._remove_item_row)
+        row = ItemRow(
+            self.items_container,
+            len(self.item_rows) + 1,
+            self._recalculate_total,
+            self._remove_item_row,
+        )
         self.item_rows.append(row)
 
     def _remove_item_row(self, row):
@@ -366,6 +394,8 @@ class InvoiceApp(ctk.CTk):
             return
         row.destroy()
         self.item_rows.remove(row)
+        for index, remaining_row in enumerate(self.item_rows, start=1):
+            remaining_row.set_row(index)
         self._recalculate_total()
 
     def _recalculate_total(self):
