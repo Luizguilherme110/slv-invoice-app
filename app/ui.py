@@ -7,6 +7,7 @@ import customtkinter as ctk
 from PIL import Image
 
 from app import storage
+from app.date_input import format_date_digits
 from app.excel_generator import generate_excel
 from app.invoice_builder import build_invoice_data, suggested_filename, validate
 from app.pdf_generator import generate_pdf
@@ -43,6 +44,18 @@ def _font(size, weight="normal"):
     return ctk.CTkFont(family=FONT_FAMILY, size=size, weight=weight)
 
 
+def _bind_date_autoformat(var):
+    """Reformats a date StringVar to dd/mm as the user types, inserting the '/'."""
+
+    def on_write(*_):
+        current = var.get()
+        formatted = format_date_digits(current)
+        if formatted != current:
+            var.set(formatted)
+
+    var.trace_add("write", on_write)
+
+
 # Shared column layout for the items grid so the header row and every item
 # row line up pixel-for-pixel (they are cells of the same grid, not separate
 # frames with independently-computed padding).
@@ -68,6 +81,7 @@ class ItemRow:
         self.date = ctk.StringVar()
         self.client = ctk.StringVar()
         self.hours = ctk.StringVar()
+        _bind_date_autoformat(self.date)
 
         self.date_entry = ctk.CTkEntry(
             parent,
@@ -289,7 +303,9 @@ class InvoiceApp(ctk.CTk):
         self.invoice_date = self._labeled_entry(
             parent, "Data", date.today().strftime("%d/%m")
         )
+        _bind_date_autoformat(self.invoice_date)
         self.date_due = self._labeled_entry(parent, "Vencimento", "")
+        _bind_date_autoformat(self.date_due)
         self.payment_method = self._labeled_entry(parent, "Pagamento", "Cash")
         self.hourly_rate = self._labeled_entry(parent, "Valor/hora", "35", last=True)
         self.hourly_rate.trace_add("write", lambda *_: self._recalculate_total())
