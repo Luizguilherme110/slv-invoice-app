@@ -3,13 +3,12 @@ from dataclasses import dataclass, field
 
 @dataclass
 class LineItem:
-    description: str
-    price: float
-    qty: float
+    date: str
+    client: str
+    hours: float
 
-    @property
-    def total(self) -> float:
-        return self.price * self.qty
+    def amount(self, hourly_rate: float) -> float:
+        return self.hours * hourly_rate
 
 
 @dataclass
@@ -24,8 +23,9 @@ class InvoiceData:
     invoice_date: str
     date_due: str
     payment_method: str
+    hourly_rate: float
     items: list = field(default_factory=list)
 
     @property
     def total(self) -> float:
-        return sum(item.total for item in self.items)
+        return sum(item.amount(self.hourly_rate) for item in self.items)

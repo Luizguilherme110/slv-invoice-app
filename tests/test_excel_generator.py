@@ -16,9 +16,10 @@ def _sample_invoice():
         invoice_date="30/05",
         date_due="10/06",
         payment_method="Cash",
+        hourly_rate=35.0,
         items=[
-            LineItem(description="Deep clean", price=35.0, qty=4.0),
-            LineItem(description="Fast clean", price=35.0, qty=1.0),
+            LineItem(date="01/04", client="11 pleasant", hours=4.0),
+            LineItem(date="02/04", client="Caren", hours=1.0),
         ],
     )
 
@@ -42,16 +43,40 @@ def test_generate_excel_writes_bill_to_and_from_names(tmp_path):
     assert _find_cell_with_value(ws, "SLV Cleaning Services") is not None
 
 
-def test_generate_excel_writes_line_items_and_total(tmp_path):
+def test_generate_excel_writes_item_rows_and_total(tmp_path):
     out_path = tmp_path / "invoice.xlsx"
     generate_excel(_sample_invoice(), out_path)
 
     wb = openpyxl.load_workbook(out_path)
     ws = wb.active
 
-    assert _find_cell_with_value(ws, "Deep clean") is not None
+    assert _find_cell_with_value(ws, "11 pleasant") is not None
+    assert _find_cell_with_value(ws, "01/04") is not None
+    assert _find_cell_with_value(ws, 4.0) is not None
     total_cell = _find_cell_with_value(ws, 175.0)
     assert total_cell is not None
+
+
+def test_generate_excel_writes_hourly_rate_in_meta_block(tmp_path):
+    out_path = tmp_path / "invoice.xlsx"
+    generate_excel(_sample_invoice(), out_path)
+
+    wb = openpyxl.load_workbook(out_path)
+    ws = wb.active
+
+    assert _find_cell_with_value(ws, 35.0) is not None
+
+
+def test_generate_excel_item_headers_are_data_cliente_amount(tmp_path):
+    out_path = tmp_path / "invoice.xlsx"
+    generate_excel(_sample_invoice(), out_path)
+
+    wb = openpyxl.load_workbook(out_path)
+    ws = wb.active
+
+    assert _find_cell_with_value(ws, "Data") is not None
+    assert _find_cell_with_value(ws, "Cliente") is not None
+    assert _find_cell_with_value(ws, "Amount") is not None
 
 
 def test_generate_excel_header_cells_use_slv_blue_fill(tmp_path):

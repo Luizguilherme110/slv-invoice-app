@@ -84,6 +84,7 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
         ("Date of invoice", invoice.invoice_date, None),
         ("Date Due", invoice.date_due, None),
         ("Payment Method", invoice.payment_method, None),
+        ("Valor/hora", invoice.hourly_rate, CURRENCY_FORMAT),
         ("Amount", invoice.total, CURRENCY_FORMAT),
     ]
     for offset, (label, value, fmt) in enumerate(meta_rows):
@@ -91,18 +92,17 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
         _blue_label_cell(ws, f"D{row}", label)
         _value_cell(ws, f"E{row}", value, fmt)
 
-    header_row = 19
-    headers = ["Description", "Price", "Qty", "Total"]
+    header_row = 21
+    headers = ["Data", "Cliente", "Amount"]
     for col_index, header in enumerate(headers):
         col_letter = get_column_letter(3 + col_index)
         _blue_label_cell(ws, f"{col_letter}{header_row}", header)
 
     for row_offset, item in enumerate(invoice.items):
         row = header_row + 1 + row_offset
-        _value_cell(ws, f"C{row}", item.description)
-        _value_cell(ws, f"D{row}", item.price, CURRENCY_FORMAT)
-        _value_cell(ws, f"E{row}", item.qty)
-        _value_cell(ws, f"F{row}", item.total, CURRENCY_FORMAT)
+        _value_cell(ws, f"C{row}", item.date)
+        _value_cell(ws, f"D{row}", item.client)
+        _value_cell(ws, f"E{row}", item.hours)
 
     signature_row = header_row + len(invoice.items) + 3
     ws.merge_cells(f"C{signature_row}:D{signature_row}")

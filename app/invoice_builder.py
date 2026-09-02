@@ -4,9 +4,9 @@ from app.models import InvoiceData, LineItem
 
 
 def _is_blank_row(row: dict) -> bool:
-    return not row.get("description", "").strip() and not row.get(
-        "price", ""
-    ).strip() and not row.get("qty", "").strip()
+    return not row.get("date", "").strip() and not row.get(
+        "client", ""
+    ).strip() and not row.get("hours", "").strip()
 
 
 def validate(form: dict) -> list:
@@ -15,27 +15,27 @@ def validate(form: dict) -> list:
     if not form.get("bill_to_name", "").strip():
         errors.append("Informe o nome do cliente.")
 
+    try:
+        hourly_rate = float(form.get("hourly_rate", ""))
+        if hourly_rate <= 0:
+            errors.append("Valor da hora deve ser maior que zero.")
+    except ValueError:
+        errors.append("Valor da hora inválido.")
+
     rows = [row for row in form.get("items", []) if not _is_blank_row(row)]
     if not rows:
         errors.append("Adicione ao menos um item.")
 
     for index, row in enumerate(rows, start=1):
-        if not row.get("description", "").strip():
-            errors.append(f"Item {index}: descrição obrigatória.")
+        if not row.get("client", "").strip():
+            errors.append(f"Item {index}: cliente obrigatório.")
 
         try:
-            price = float(row.get("price", ""))
-            if price <= 0:
-                errors.append(f"Item {index}: preço deve ser maior que zero.")
+            hours = float(row.get("hours", ""))
+            if hours <= 0:
+                errors.append(f"Item {index}: Amount deve ser maior que zero.")
         except ValueError:
-            errors.append(f"Item {index}: preço inválido.")
-
-        try:
-            qty = float(row.get("qty", ""))
-            if qty <= 0:
-                errors.append(f"Item {index}: quantidade deve ser maior que zero.")
-        except ValueError:
-            errors.append(f"Item {index}: quantidade inválida.")
+            errors.append(f"Item {index}: Amount inválido.")
 
     return errors
 
@@ -47,9 +47,9 @@ def build_invoice_data(form: dict) -> InvoiceData:
             continue
         items.append(
             LineItem(
-                description=row["description"].strip(),
-                price=float(row["price"]),
-                qty=float(row["qty"]),
+                date=row["date"].strip(),
+                client=row["client"].strip(),
+                hours=float(row["hours"]),
             )
         )
 
@@ -64,6 +64,7 @@ def build_invoice_data(form: dict) -> InvoiceData:
         invoice_date=form["invoice_date"],
         date_due=form["date_due"],
         payment_method=form["payment_method"],
+        hourly_rate=float(form["hourly_rate"]),
         items=items,
     )
 

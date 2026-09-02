@@ -52,6 +52,7 @@ def _meta_table(invoice, styles):
         ["Date of invoice", invoice.invoice_date],
         ["Date Due", invoice.date_due],
         ["Payment Method", invoice.payment_method],
+        ["Valor/hora", f"${invoice.hourly_rate:,.2f}"],
         ["Amount", f"${invoice.total:,.2f}"],
     ]
     table = Table(rows, colWidths=[1.7 * inch, 1.7 * inch])
@@ -68,18 +69,11 @@ def _meta_table(invoice, styles):
 
 
 def _items_table(invoice):
-    header = ["Description", "Price", "Qty", "Total"]
+    header = ["Data", "Cliente", "Amount"]
     rows = [header]
     for item in invoice.items:
-        rows.append(
-            [
-                item.description,
-                f"${item.price:,.2f}",
-                f"{item.qty:g}",
-                f"${item.total:,.2f}",
-            ]
-        )
-    table = Table(rows, colWidths=[2.6 * inch, 1.3 * inch, 1.0 * inch, 1.3 * inch])
+        rows.append([item.date, item.client, f"{item.hours:g}"])
+    table = Table(rows, colWidths=[1.5 * inch, 3.2 * inch, 1.5 * inch])
     table.setStyle(
         TableStyle(
             [

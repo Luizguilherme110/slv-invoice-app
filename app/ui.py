@@ -47,10 +47,9 @@ def _font(size, weight="normal"):
 # row line up pixel-for-pixel (they are cells of the same grid, not separate
 # frames with independently-computed padding).
 ITEMS_COLUMNS = [
-    {"weight": 1, "minsize": 0},    # description
-    {"weight": 0, "minsize": 100},  # price
-    {"weight": 0, "minsize": 80},   # qty
-    {"weight": 0, "minsize": 100},  # total
+    {"weight": 0, "minsize": 100},  # date
+    {"weight": 1, "minsize": 0},    # client
+    {"weight": 0, "minsize": 110},  # amount (hours worked at the invoice's hourly rate)
     {"weight": 0, "minsize": 84},   # remove button
 ]
 
@@ -66,46 +65,38 @@ class ItemRow:
     def __init__(self, parent, row_index, on_change, on_remove):
         self.parent = parent
 
-        self.description = ctk.StringVar()
-        self.price = ctk.StringVar()
-        self.qty = ctk.StringVar()
+        self.date = ctk.StringVar()
+        self.client = ctk.StringVar()
+        self.hours = ctk.StringVar()
 
-        self.desc_entry = ctk.CTkEntry(
+        self.date_entry = ctk.CTkEntry(
             parent,
-            textvariable=self.description,
-            placeholder_text="Descrição do serviço",
+            textvariable=self.date,
+            placeholder_text="dd/mm",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
         )
 
-        self.price_entry = ctk.CTkEntry(
+        self.client_entry = ctk.CTkEntry(
             parent,
-            textvariable=self.price,
-            placeholder_text="0,00",
+            textvariable=self.client,
+            placeholder_text="Cliente / imóvel atendido",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
         )
 
-        self.qty_entry = ctk.CTkEntry(
+        self.amount_entry = ctk.CTkEntry(
             parent,
-            textvariable=self.qty,
+            textvariable=self.hours,
             placeholder_text="0",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
-        )
-
-        self.total_label = ctk.CTkLabel(
-            parent,
-            text="$0.00",
-            anchor="e",
-            font=_font(13, "bold"),
-            text_color=NAVY,
         )
 
         self.remove_button = ctk.CTkButton(
@@ -123,41 +114,30 @@ class ItemRow:
         )
 
         self.widgets = [
-            self.desc_entry,
-            self.price_entry,
-            self.qty_entry,
-            self.total_label,
+            self.date_entry,
+            self.client_entry,
+            self.amount_entry,
             self.remove_button,
         ]
         self.set_row(row_index)
 
-        self.description.trace_add("write", lambda *_: on_change())
-        self.price.trace_add("write", lambda *_: on_change())
-        self.qty.trace_add("write", lambda *_: on_change())
+        self.date.trace_add("write", lambda *_: on_change())
+        self.client.trace_add("write", lambda *_: on_change())
+        self.hours.trace_add("write", lambda *_: on_change())
 
     def set_row(self, row_index):
         pady = (0, 8)
-        self.desc_entry.grid(row=row_index, column=0, sticky="ew", padx=(0, 8), pady=pady)
-        self.price_entry.grid(row=row_index, column=1, sticky="ew", padx=4, pady=pady)
-        self.qty_entry.grid(row=row_index, column=2, sticky="ew", padx=4, pady=pady)
-        self.total_label.grid(row=row_index, column=3, sticky="e", padx=4, pady=pady)
-        self.remove_button.grid(row=row_index, column=4, sticky="w", padx=(4, 0), pady=pady)
+        self.date_entry.grid(row=row_index, column=0, sticky="ew", padx=(0, 8), pady=pady)
+        self.client_entry.grid(row=row_index, column=1, sticky="ew", padx=4, pady=pady)
+        self.amount_entry.grid(row=row_index, column=2, sticky="ew", padx=4, pady=pady)
+        self.remove_button.grid(row=row_index, column=3, sticky="w", padx=(4, 0), pady=pady)
 
     def as_dict(self):
         return {
-            "description": self.description.get(),
-            "price": self.price.get(),
-            "qty": self.qty.get(),
+            "date": self.date.get(),
+            "client": self.client.get(),
+            "hours": self.hours.get(),
         }
-
-    def row_total(self):
-        try:
-            return float(self.price.get()) * float(self.qty.get())
-        except ValueError:
-            return 0.0
-
-    def refresh_total_label(self):
-        self.total_label.configure(text=f"${self.row_total():,.2f}")
 
     def destroy(self):
         for widget in self.widgets:
@@ -310,9 +290,9 @@ class InvoiceApp(ctk.CTk):
             parent, "Data", date.today().strftime("%d/%m")
         )
         self.date_due = self._labeled_entry(parent, "Vencimento", "")
-        self.payment_method = self._labeled_entry(
-            parent, "Pagamento", "Cash", last=True
-        )
+        self.payment_method = self._labeled_entry(parent, "Pagamento", "Cash")
+        self.hourly_rate = self._labeled_entry(parent, "Valor/hora", "35", last=True)
+        self.hourly_rate.trace_add("write", lambda *_: self._recalculate_total())
 
     def _build_items_section(self, parent):
         self._section_title(parent, "Itens")
@@ -321,8 +301,8 @@ class InvoiceApp(ctk.CTk):
         self.items_container.pack(fill="x", padx=18)
         configure_items_grid(self.items_container)
 
-        headers = ["Descrição", "Preço", "Qtd", "Total", ""]
-        alignments = ["w", "center", "center", "e", "w"]
+        headers = ["Data", "Cliente", "Amount", ""]
+        alignments = ["center", "w", "center", "w"]
         for col, (text, anchor) in enumerate(zip(headers, alignments)):
             ctk.CTkLabel(
                 self.items_container,
@@ -399,10 +379,17 @@ class InvoiceApp(ctk.CTk):
         self._recalculate_total()
 
     def _recalculate_total(self):
+        try:
+            hourly_rate = float(self.hourly_rate.get())
+        except ValueError:
+            hourly_rate = 0.0
+
         total = 0.0
         for row in self.item_rows:
-            row.refresh_total_label()
-            total += row.row_total()
+            try:
+                total += float(row.hours.get()) * hourly_rate
+            except ValueError:
+                pass
         self.total_label.configure(text=f"Total: ${total:,.2f}")
 
     def _collect_form(self):
@@ -417,6 +404,7 @@ class InvoiceApp(ctk.CTk):
             "invoice_date": self.invoice_date.get(),
             "date_due": self.date_due.get(),
             "payment_method": self.payment_method.get(),
+            "hourly_rate": self.hourly_rate.get(),
             "items": [row.as_dict() for row in self.item_rows],
         }
 
