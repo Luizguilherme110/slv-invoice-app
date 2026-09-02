@@ -44,14 +44,20 @@ def _font(size, weight="normal"):
     return ctk.CTkFont(family=FONT_FAMILY, size=size, weight=weight)
 
 
-def _bind_date_autoformat(var):
-    """Reformats a date StringVar to dd/mm as the user types, inserting the '/'."""
+def _bind_date_autoformat(var, entry):
+    """Reformats a date StringVar to dd/mm/yyyy as the user types, inserting the
+    '/' separators. Must also move the cursor to the end after reformatting:
+    inserting a '/' lengthens the text, and without repositioning the cursor
+    tkinter leaves it at its old numeric index, which now sits in the middle
+    of the new text - so the next digit typed lands in the wrong place and
+    scrambles the date instead of appending to it."""
 
     def on_write(*_):
         current = var.get()
         formatted = format_date_digits(current)
         if formatted != current:
             var.set(formatted)
+            entry.after_idle(lambda: entry.icursor("end"))
 
     var.trace_add("write", on_write)
 
@@ -81,7 +87,6 @@ class ItemRow:
         self.date = ctk.StringVar()
         self.client = ctk.StringVar()
         self.hours = ctk.StringVar()
-        _bind_date_autoformat(self.date)
 
         self.date_entry = ctk.CTkEntry(
             parent,
@@ -92,6 +97,7 @@ class ItemRow:
             border_color=BORDER,
             fg_color=SURFACE,
         )
+        _bind_date_autoformat(self.date, self.date_entry)
 
         self.client_entry = ctk.CTkEntry(
             parent,
@@ -274,7 +280,9 @@ class InvoiceApp(ctk.CTk):
         address_var = self._labeled_entry(parent, "Address", defaults[2], last=True)
         return name_var, phone_var, address_var
 
-    def _labeled_entry(self, parent, label, default_value, last=False, placeholder=""):
+    def _labeled_entry(
+        self, parent, label, default_value, last=False, placeholder="", autoformat_date=False
+    ):
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=18, pady=(0, 14 if last else 8))
         ctk.CTkLabel(
@@ -286,7 +294,7 @@ class InvoiceApp(ctk.CTk):
             anchor="w",
         ).pack(side="left")
         var = ctk.StringVar(value=default_value)
-        ctk.CTkEntry(
+        entry = ctk.CTkEntry(
             row,
             textvariable=var,
             placeholder_text=placeholder,
@@ -294,7 +302,10 @@ class InvoiceApp(ctk.CTk):
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
             fg_color=SURFACE,
-        ).pack(side="left", fill="x", expand=True)
+        )
+        entry.pack(side="left", fill="x", expand=True)
+        if autoformat_date:
+            _bind_date_autoformat(var, entry)
         return var
 
     def _build_meta_section(self, parent):
@@ -302,13 +313,14 @@ class InvoiceApp(ctk.CTk):
         next_number = storage.peek_next_invoice_number(self.config_path)
         self.invoice_no = self._labeled_entry(parent, "Invoice no.", str(next_number))
         self.invoice_date = self._labeled_entry(
-            parent, "Date", date.today().strftime("%d/%m/%Y")
+            parent,
+            "Date",
+            date.today().strftime("%d/%m/%Y"),
+            autoformat_date=True,
         )
-        _bind_date_autoformat(self.invoice_date)
         self.date_due = self._labeled_entry(
-            parent, "Due date", "", placeholder="dd/mm/yyyy"
+            parent, "Due date", "", placeholder="dd/mm/yyyy", autoformat_date=True
         )
-        _bind_date_autoformat(self.date_due)
         self.payment_method = self._labeled_entry(parent, "Payment", "Cash")
         self.hourly_rate = self._labeled_entry(
             parent, "Hourly rate", "35", last=True
