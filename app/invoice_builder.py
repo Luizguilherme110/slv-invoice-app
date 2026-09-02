@@ -13,29 +13,29 @@ def validate(form: dict) -> list:
     errors = []
 
     if not form.get("bill_to_name", "").strip():
-        errors.append("Informe o nome do cliente.")
+        errors.append("Enter the client's name.")
 
     try:
         hourly_rate = float(form.get("hourly_rate", ""))
         if hourly_rate <= 0:
-            errors.append("Valor da hora deve ser maior que zero.")
+            errors.append("Hourly rate must be greater than zero.")
     except ValueError:
-        errors.append("Valor da hora inválido.")
+        errors.append("Invalid hourly rate.")
 
     rows = [row for row in form.get("items", []) if not _is_blank_row(row)]
     if not rows:
-        errors.append("Adicione ao menos um item.")
+        errors.append("Add at least one item.")
 
     for index, row in enumerate(rows, start=1):
         if not row.get("client", "").strip():
-            errors.append(f"Item {index}: cliente obrigatório.")
+            errors.append(f"Item {index}: client is required.")
 
         try:
             hours = float(row.get("hours", ""))
             if hours <= 0:
-                errors.append(f"Item {index}: Amount deve ser maior que zero.")
+                errors.append(f"Item {index}: Amount must be greater than zero.")
         except ValueError:
-            errors.append(f"Item {index}: Amount inválido.")
+            errors.append(f"Item {index}: Invalid amount.")
 
     return errors
 

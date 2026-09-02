@@ -54,6 +54,6 @@ def test_generate_pdf_shows_hourly_rate_and_item_headers(tmp_path):
     text = reader.pages[0].extract_text()
 
     assert "35.00" in text
-    assert "Data" in text
-    assert "Cliente" in text
+    assert "Date" in text
+    assert "Client" in text
     assert "Amount" in text

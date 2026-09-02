@@ -67,15 +67,15 @@ def test_generate_excel_writes_hourly_rate_in_meta_block(tmp_path):
     assert _find_cell_with_value(ws, 35.0) is not None
 
 
-def test_generate_excel_item_headers_are_data_cliente_amount(tmp_path):
+def test_generate_excel_item_headers_are_date_client_amount(tmp_path):
     out_path = tmp_path / "invoice.xlsx"
     generate_excel(_sample_invoice(), out_path)
 
     wb = openpyxl.load_workbook(out_path)
     ws = wb.active
 
-    assert _find_cell_with_value(ws, "Data") is not None
-    assert _find_cell_with_value(ws, "Cliente") is not None
+    assert _find_cell_with_value(ws, "Date") is not None
+    assert _find_cell_with_value(ws, "Client") is not None
     assert _find_cell_with_value(ws, "Amount") is not None
 
 

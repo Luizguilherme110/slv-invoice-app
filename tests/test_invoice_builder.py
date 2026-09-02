@@ -28,7 +28,7 @@ def test_validate_requires_bill_to_name():
     form = _valid_form()
     form["bill_to_name"] = "  "
     errors = validate(form)
-    assert any("cliente" in e.lower() for e in errors)
+    assert any("client" in e.lower() for e in errors)
 
 
 def test_validate_requires_at_least_one_item():
@@ -42,28 +42,28 @@ def test_validate_requires_hourly_rate():
     form = _valid_form()
     form["hourly_rate"] = ""
     errors = validate(form)
-    assert any("hora" in e.lower() for e in errors)
+    assert any("hourly rate" in e.lower() for e in errors)
 
 
 def test_validate_rejects_non_numeric_hourly_rate():
     form = _valid_form()
     form["hourly_rate"] = "abc"
     errors = validate(form)
-    assert any("hora" in e.lower() for e in errors)
+    assert any("hourly rate" in e.lower() for e in errors)
 
 
 def test_validate_rejects_zero_hourly_rate():
     form = _valid_form()
     form["hourly_rate"] = "0"
     errors = validate(form)
-    assert any("hora" in e.lower() for e in errors)
+    assert any("hourly rate" in e.lower() for e in errors)
 
 
 def test_validate_requires_item_client():
     form = _valid_form()
     form["items"] = [{"date": "01/04", "client": "", "hours": "4"}]
     errors = validate(form)
-    assert any("cliente" in e.lower() for e in errors)
+    assert any("client" in e.lower() for e in errors)
 
 
 def test_validate_rejects_zero_hours():

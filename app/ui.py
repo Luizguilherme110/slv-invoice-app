@@ -86,7 +86,7 @@ class ItemRow:
         self.date_entry = ctk.CTkEntry(
             parent,
             textvariable=self.date,
-            placeholder_text="dd/mm",
+            placeholder_text="dd/mm/yyyy",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
@@ -96,7 +96,7 @@ class ItemRow:
         self.client_entry = ctk.CTkEntry(
             parent,
             textvariable=self.client,
-            placeholder_text="Cliente / imóvel atendido",
+            placeholder_text="Client / property",
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
@@ -115,7 +115,7 @@ class ItemRow:
 
         self.remove_button = ctk.CTkButton(
             parent,
-            text="Remover",
+            text="Remove",
             height=28,
             font=_font(11),
             corner_radius=BUTTON_RADIUS,
@@ -164,7 +164,7 @@ class InvoiceApp(ctk.CTk):
         ctk.set_default_color_theme("blue")
         super().__init__(fg_color=BACKGROUND)
 
-        self.title("SLV Cleaning Services - Emissor de Invoice")
+        self.title("SLV Cleaning Services - Invoice Generator")
         self.geometry("880x820")
         self.minsize(760, 640)
         self._set_window_icon()
@@ -252,7 +252,7 @@ class InvoiceApp(ctk.CTk):
         ).pack(anchor="w")
         ctk.CTkLabel(
             text_col,
-            text="Emissor de invoice",
+            text="Invoice Generator",
             font=_font(12),
             text_color="#B7C6DA",
             anchor="w",
@@ -269,12 +269,12 @@ class InvoiceApp(ctk.CTk):
 
     def _build_party_section(self, parent, title, defaults):
         self._section_title(parent, title)
-        name_var = self._labeled_entry(parent, "Nome", defaults[0])
-        phone_var = self._labeled_entry(parent, "Telefone", defaults[1])
-        address_var = self._labeled_entry(parent, "Endereço", defaults[2], last=True)
+        name_var = self._labeled_entry(parent, "Name", defaults[0])
+        phone_var = self._labeled_entry(parent, "Phone", defaults[1])
+        address_var = self._labeled_entry(parent, "Address", defaults[2], last=True)
         return name_var, phone_var, address_var
 
-    def _labeled_entry(self, parent, label, default_value, last=False):
+    def _labeled_entry(self, parent, label, default_value, last=False, placeholder=""):
         row = ctk.CTkFrame(parent, fg_color="transparent")
         row.pack(fill="x", padx=18, pady=(0, 14 if last else 8))
         ctk.CTkLabel(
@@ -289,6 +289,7 @@ class InvoiceApp(ctk.CTk):
         ctk.CTkEntry(
             row,
             textvariable=var,
+            placeholder_text=placeholder,
             font=_font(13),
             corner_radius=FIELD_RADIUS,
             border_color=BORDER,
@@ -297,27 +298,31 @@ class InvoiceApp(ctk.CTk):
         return var
 
     def _build_meta_section(self, parent):
-        self._section_title(parent, "Dados da invoice")
+        self._section_title(parent, "Invoice details")
         next_number = storage.peek_next_invoice_number(self.config_path)
-        self.invoice_no = self._labeled_entry(parent, "Nº invoice", str(next_number))
+        self.invoice_no = self._labeled_entry(parent, "Invoice no.", str(next_number))
         self.invoice_date = self._labeled_entry(
-            parent, "Data", date.today().strftime("%d/%m")
+            parent, "Date", date.today().strftime("%d/%m/%Y")
         )
         _bind_date_autoformat(self.invoice_date)
-        self.date_due = self._labeled_entry(parent, "Vencimento", "")
+        self.date_due = self._labeled_entry(
+            parent, "Due date", "", placeholder="dd/mm/yyyy"
+        )
         _bind_date_autoformat(self.date_due)
-        self.payment_method = self._labeled_entry(parent, "Pagamento", "Cash")
-        self.hourly_rate = self._labeled_entry(parent, "Valor/hora", "35", last=True)
+        self.payment_method = self._labeled_entry(parent, "Payment", "Cash")
+        self.hourly_rate = self._labeled_entry(
+            parent, "Hourly rate", "35", last=True
+        )
         self.hourly_rate.trace_add("write", lambda *_: self._recalculate_total())
 
     def _build_items_section(self, parent):
-        self._section_title(parent, "Itens")
+        self._section_title(parent, "Items")
 
         self.items_container = ctk.CTkFrame(parent, fg_color="transparent")
         self.items_container.pack(fill="x", padx=18)
         configure_items_grid(self.items_container)
 
-        headers = ["Data", "Cliente", "Amount", ""]
+        headers = ["Date", "Client", "Amount", ""]
         alignments = ["center", "w", "center", "w"]
         for col, (text, anchor) in enumerate(zip(headers, alignments)):
             ctk.CTkLabel(
@@ -330,7 +335,7 @@ class InvoiceApp(ctk.CTk):
 
         ctk.CTkButton(
             parent,
-            text="+  Adicionar item",
+            text="+  Add item",
             command=self._add_item_row,
             font=_font(12, "bold"),
             corner_radius=BUTTON_RADIUS,
@@ -357,7 +362,7 @@ class InvoiceApp(ctk.CTk):
         buttons_frame.pack(fill="x")
         ctk.CTkButton(
             buttons_frame,
-            text="Exportar PDF",
+            text="Export PDF",
             height=46,
             font=_font(14, "bold"),
             corner_radius=BUTTON_RADIUS,
@@ -367,7 +372,7 @@ class InvoiceApp(ctk.CTk):
         ).pack(side="left", fill="x", expand=True, padx=(0, 8))
         ctk.CTkButton(
             buttons_frame,
-            text="Exportar Excel",
+            text="Export Excel",
             height=46,
             font=_font(14, "bold"),
             corner_radius=BUTTON_RADIUS,
@@ -428,14 +433,14 @@ class InvoiceApp(ctk.CTk):
         form = self._collect_form()
         errors = validate(form)
         if errors:
-            messagebox.showerror("Corrija os campos abaixo", "\n".join(errors))
+            messagebox.showerror("Please fix the fields below", "\n".join(errors))
             return
 
         invoice = build_invoice_data(form)
         default_name = suggested_filename(invoice.invoice_no, invoice.bill_to_name, fmt)
         documents_dir = Path.home() / "Documents"
         filetypes = (
-            [("Arquivo PDF", "*.pdf")] if fmt == "pdf" else [("Planilha Excel", "*.xlsx")]
+            [("PDF file", "*.pdf")] if fmt == "pdf" else [("Excel spreadsheet", "*.xlsx")]
         )
         path = filedialog.asksaveasfilename(
             initialfile=default_name,
@@ -452,7 +457,7 @@ class InvoiceApp(ctk.CTk):
             else:
                 generate_excel(invoice, Path(path))
         except Exception as exc:  # noqa: BLE001 - surface any failure to the user
-            messagebox.showerror("Erro ao gerar arquivo", str(exc))
+            messagebox.showerror("Error generating file", str(exc))
             return
 
         storage.advance_invoice_number(self.config_path)

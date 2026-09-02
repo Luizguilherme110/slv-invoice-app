@@ -84,7 +84,7 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
         ("Date of invoice", invoice.invoice_date, None),
         ("Date Due", invoice.date_due, None),
         ("Payment Method", invoice.payment_method, None),
-        ("Valor/hora", invoice.hourly_rate, CURRENCY_FORMAT),
+        ("Hourly rate", invoice.hourly_rate, CURRENCY_FORMAT),
         ("Amount", invoice.total, CURRENCY_FORMAT),
     ]
     for offset, (label, value, fmt) in enumerate(meta_rows):
@@ -93,7 +93,7 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
         _value_cell(ws, f"E{row}", value, fmt)
 
     header_row = 21
-    headers = ["Data", "Cliente", "Amount"]
+    headers = ["Date", "Client", "Amount"]
     for col_index, header in enumerate(headers):
         col_letter = get_column_letter(3 + col_index)
         _blue_label_cell(ws, f"{col_letter}{header_row}", header)
