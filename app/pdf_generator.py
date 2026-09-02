@@ -96,9 +96,6 @@ def generate_pdf(invoice: InvoiceData, out_path: Path) -> None:
         "party_title": ParagraphStyle(
             "party_title", fontName="Helvetica-Bold", fontSize=15
         ),
-        "signature_label": ParagraphStyle(
-            "signature_label", fontName="Helvetica", fontSize=10, alignment=1
-        ),
     }
 
     doc = SimpleDocTemplate(
@@ -151,15 +148,5 @@ def generate_pdf(invoice: InvoiceData, out_path: Path) -> None:
     elements.append(Spacer(1, 24))
 
     elements.append(_items_table(invoice))
-    elements.append(Spacer(1, 40))
-
-    signature_line = Table([[""]], colWidths=[2.5 * inch], rowHeights=[0.4 * inch])
-    signature_line.setStyle(TableStyle([("LINEBELOW", (0, 0), (0, 0), 1, colors.black)]))
-    signature_block = Table(
-        [[signature_line], [Paragraph("Signature", styles["signature_label"])]],
-        colWidths=[2.5 * inch],
-    )
-    signature_block.hAlign = "CENTER"
-    elements.append(signature_block)
 
     doc.build(elements)

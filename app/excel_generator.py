@@ -104,13 +104,6 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
         _value_cell(ws, f"D{row}", item.client)
         _value_cell(ws, f"E{row}", item.hours)
 
-    signature_row = header_row + len(invoice.items) + 3
-    ws.merge_cells(f"C{signature_row}:D{signature_row}")
-    ws[f"C{signature_row}"].border = Border(bottom=THIN)
-    label_row = signature_row + 1
-    ws[f"C{label_row}"].value = "Signature"
-    ws[f"C{label_row}"].alignment = Alignment(horizontal="center")
-
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
