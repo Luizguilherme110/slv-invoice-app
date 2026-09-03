@@ -1,4 +1,24 @@
-from app.date_input import format_date_digits
+from app.date_input import format_date_digits, format_range
+
+
+def test_range_joins_both_dates_with_a_hyphen():
+    assert format_range("01/04/2026", "07/04/2026") == "01/04/2026 - 07/04/2026"
+
+
+def test_range_with_only_the_start_date_shows_just_that_date():
+    assert format_range("01/04/2026", "") == "01/04/2026"
+
+
+def test_range_with_only_the_end_date_shows_just_that_date():
+    assert format_range("", "07/04/2026") == "07/04/2026"
+
+
+def test_empty_range_is_empty():
+    assert format_range("", "") == ""
+
+
+def test_range_ignores_surrounding_whitespace():
+    assert format_range("  01/04/2026 ", " 07/04/2026") == "01/04/2026 - 07/04/2026"
 
 
 def test_empty_stays_empty():

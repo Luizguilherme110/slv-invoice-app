@@ -13,6 +13,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.date_input import format_range
 from app.models import InvoiceData
 from app.resources import resource_path
 
@@ -49,10 +50,11 @@ def _party_table(title, name, phone, address, styles):
 def _meta_table(invoice, styles):
     rows = [
         ["Invoice no.", str(invoice.invoice_no)],
-        ["Date of invoice", invoice.invoice_date],
-        ["Date Due", invoice.date_due],
+        ["Date", format_range(invoice.date_from, invoice.date_to)],
+        ["Week", format_range(invoice.week_from, invoice.week_to)],
         ["Payment Method", invoice.payment_method],
         ["Hourly rate", f"${invoice.hourly_rate:,.2f}"],
+        ["Total hours", f"{invoice.total_hours:g}"],
         ["Amount", f"${invoice.total:,.2f}"],
     ]
     table = Table(rows, colWidths=[1.7 * inch, 1.7 * inch])

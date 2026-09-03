@@ -20,11 +20,17 @@ class InvoiceData:
     bill_to_phone: str
     bill_to_address: str
     invoice_no: str
-    invoice_date: str
-    date_due: str
+    date_from: str
+    date_to: str
+    week_from: str
+    week_to: str
     payment_method: str
     hourly_rate: float
     items: list = field(default_factory=list)
+
+    @property
+    def total_hours(self) -> float:
+        return sum(item.hours for item in self.items)
 
     @property
     def total(self) -> float:

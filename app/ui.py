@@ -308,19 +308,45 @@ class InvoiceApp(ctk.CTk):
             _bind_date_autoformat(var, entry)
         return var
 
+    def _labeled_date_range(self, parent, label, defaults=("", ""), last=False):
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        row.pack(fill="x", padx=18, pady=(0, 14 if last else 8))
+        ctk.CTkLabel(
+            row,
+            text=label,
+            font=_font(12, "bold"),
+            text_color=TEXT_SECONDARY,
+            width=88,
+            anchor="w",
+        ).pack(side="left")
+
+        range_vars = []
+        for index, default_value in enumerate(defaults):
+            var = ctk.StringVar(value=default_value)
+            entry = ctk.CTkEntry(
+                row,
+                textvariable=var,
+                placeholder_text="dd/mm/yyyy",
+                font=_font(13),
+                corner_radius=FIELD_RADIUS,
+                border_color=BORDER,
+                fg_color=SURFACE,
+            )
+            entry.pack(
+                side="left", fill="x", expand=True, padx=(0, 0) if index == 0 else (6, 0)
+            )
+            _bind_date_autoformat(var, entry)
+            range_vars.append(var)
+        return range_vars[0], range_vars[1]
+
     def _build_meta_section(self, parent):
         self._section_title(parent, "Invoice details")
         next_number = storage.peek_next_invoice_number(self.config_path)
         self.invoice_no = self._labeled_entry(parent, "Invoice no.", str(next_number))
-        self.invoice_date = self._labeled_entry(
-            parent,
-            "Date",
-            date.today().strftime("%d/%m/%Y"),
-            autoformat_date=True,
+        self.date_from, self.date_to = self._labeled_date_range(
+            parent, "Date", (date.today().strftime("%d/%m/%Y"), "")
         )
-        self.date_due = self._labeled_entry(
-            parent, "Due date", "", placeholder="dd/mm/yyyy", autoformat_date=True
-        )
+        self.week_from, self.week_to = self._labeled_date_range(parent, "Week")
         self.payment_method = self._labeled_entry(parent, "Payment", "Cash")
         self.hourly_rate = self._labeled_entry(
             parent, "Hourly rate", "35", last=True
@@ -369,6 +395,13 @@ class InvoiceApp(ctk.CTk):
             text_color=NAVY,
         )
         self.total_label.pack(side="right")
+        self.total_hours_label = ctk.CTkLabel(
+            total_row,
+            text="Total hours: 0",
+            font=_font(14, "bold"),
+            text_color=TEXT_SECONDARY,
+        )
+        self.total_hours_label.pack(side="right", padx=(0, 18))
 
         buttons_frame = ctk.CTkFrame(container, fg_color="transparent")
         buttons_frame.pack(fill="x")
@@ -417,13 +450,15 @@ class InvoiceApp(ctk.CTk):
         except ValueError:
             hourly_rate = 0.0
 
-        total = 0.0
+        total_hours = 0.0
         for row in self.item_rows:
             try:
-                total += float(row.hours.get()) * hourly_rate
+                total_hours += float(row.hours.get())
             except ValueError:
                 pass
-        self.total_label.configure(text=f"Total: ${total:,.2f}")
+
+        self.total_hours_label.configure(text=f"Total hours: {total_hours:g}")
+        self.total_label.configure(text=f"Total: ${total_hours * hourly_rate:,.2f}")
 
     def _collect_form(self):
         return {
@@ -434,8 +469,10 @@ class InvoiceApp(ctk.CTk):
             "bill_to_phone": self.bill_to_phone.get(),
             "bill_to_address": self.bill_to_address.get(),
             "invoice_no": self.invoice_no.get(),
-            "invoice_date": self.invoice_date.get(),
-            "date_due": self.date_due.get(),
+            "date_from": self.date_from.get(),
+            "date_to": self.date_to.get(),
+            "week_from": self.week_from.get(),
+            "week_to": self.week_to.get(),
             "payment_method": self.payment_method.get(),
             "hourly_rate": self.hourly_rate.get(),
             "items": [row.as_dict() for row in self.item_rows],
@@ -472,7 +509,14 @@ class InvoiceApp(ctk.CTk):
             messagebox.showerror("Error generating file", str(exc))
             return
 
-        storage.advance_invoice_number(self.config_path)
+        # Continue from whatever number the user actually exported: if they
+        # typed 22 by hand, the next invoice is 23, not the stored sequence.
+        try:
+            storage.set_next_invoice_number(
+                self.config_path, int(str(invoice.invoice_no).strip()) + 1
+            )
+        except ValueError:
+            storage.advance_invoice_number(self.config_path)
         self.invoice_no.set(str(storage.peek_next_invoice_number(self.config_path)))
 
         try:

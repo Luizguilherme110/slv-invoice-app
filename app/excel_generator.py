@@ -5,6 +5,7 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from app.date_input import format_range
 from app.models import InvoiceData
 from app.resources import resource_path
 
@@ -81,10 +82,11 @@ def generate_excel(invoice: InvoiceData, out_path: Path) -> None:
 
     meta_rows = [
         ("Invoice no.", invoice.invoice_no, None),
-        ("Date of invoice", invoice.invoice_date, None),
-        ("Date Due", invoice.date_due, None),
+        ("Date", format_range(invoice.date_from, invoice.date_to), None),
+        ("Week", format_range(invoice.week_from, invoice.week_to), None),
         ("Payment Method", invoice.payment_method, None),
         ("Hourly rate", invoice.hourly_rate, CURRENCY_FORMAT),
+        ("Total hours", invoice.total_hours, None),
         ("Amount", invoice.total, CURRENCY_FORMAT),
     ]
     for offset, (label, value, fmt) in enumerate(meta_rows):

@@ -15,9 +15,10 @@ def peek_next_invoice_number(config_path: Path) -> int:
     return data.get("next_invoice_no", 1)
 
 
-def advance_invoice_number(config_path: Path) -> None:
-    current = peek_next_invoice_number(config_path)
+def set_next_invoice_number(config_path: Path, value: int) -> None:
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(
-        json.dumps({"next_invoice_no": current + 1}), encoding="utf-8"
-    )
+    config_path.write_text(json.dumps({"next_invoice_no": value}), encoding="utf-8")
+
+
+def advance_invoice_number(config_path: Path) -> None:
+    set_next_invoice_number(config_path, peek_next_invoice_number(config_path) + 1)

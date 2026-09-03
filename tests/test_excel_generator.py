@@ -13,13 +13,15 @@ def _sample_invoice():
         bill_to_phone="555-1234",
         bill_to_address="1 Main St",
         invoice_no="3",
-        invoice_date="30/05",
-        date_due="10/06",
+        date_from="01/04/2026",
+        date_to="07/04/2026",
+        week_from="08/04/2026",
+        week_to="14/04/2026",
         payment_method="Cash",
         hourly_rate=35.0,
         items=[
-            LineItem(date="01/04", client="11 pleasant", hours=4.0),
-            LineItem(date="02/04", client="Caren", hours=1.0),
+            LineItem(date="01/04/2026", client="11 pleasant", hours=4.0),
+            LineItem(date="02/04/2026", client="Caren", hours=1.0),
         ],
     )
 
@@ -51,20 +53,32 @@ def test_generate_excel_writes_item_rows_and_total(tmp_path):
     ws = wb.active
 
     assert _find_cell_with_value(ws, "11 pleasant") is not None
-    assert _find_cell_with_value(ws, "01/04") is not None
     assert _find_cell_with_value(ws, 4.0) is not None
-    total_cell = _find_cell_with_value(ws, 175.0)
-    assert total_cell is not None
+    assert _find_cell_with_value(ws, 175.0) is not None
 
 
-def test_generate_excel_writes_hourly_rate_in_meta_block(tmp_path):
+def test_generate_excel_writes_date_and_week_as_ranges(tmp_path):
     out_path = tmp_path / "invoice.xlsx"
     generate_excel(_sample_invoice(), out_path)
 
     wb = openpyxl.load_workbook(out_path)
     ws = wb.active
 
-    assert _find_cell_with_value(ws, 35.0) is not None
+    assert _find_cell_with_value(ws, "Week") is not None
+    assert _find_cell_with_value(ws, "01/04/2026 - 07/04/2026") is not None
+    assert _find_cell_with_value(ws, "08/04/2026 - 14/04/2026") is not None
+
+
+def test_generate_excel_writes_total_hours(tmp_path):
+    out_path = tmp_path / "invoice.xlsx"
+    generate_excel(_sample_invoice(), out_path)
+
+    wb = openpyxl.load_workbook(out_path)
+    ws = wb.active
+
+    label = _find_cell_with_value(ws, "Total hours")
+    assert label is not None
+    assert _find_cell_with_value(ws, 5.0) is not None
 
 
 def test_generate_excel_item_headers_are_date_client_amount(tmp_path):
