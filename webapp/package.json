@@ -1,0 +1,22 @@
+{
+  "name": "slv-invoice-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SLV Cleaning Services invoice generator - static offline web app",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "vendor": "node scripts/vendor.mjs",
+    "logo": "node scripts/embedLogo.mjs",
+    "sample": "node scripts/sample.mjs",
+    "bundle": "node scripts/bundle.mjs"
+  },
+  "devDependencies": {
+    "exceljs": "4.4.0",
+    "jsdom": "^27.0.0",
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.8",
+    "pngjs": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}

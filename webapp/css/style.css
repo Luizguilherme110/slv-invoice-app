@@ -1,0 +1,298 @@
+/* Palette pulled from the SLV Cleaning Services logo - same values the
+   customtkinter desktop app used, so the two look like one product. */
+:root {
+  --navy: #0f2f5c;
+  --navy-hover: #0b2447;
+  --navy-soft: #e7ecf3;
+  --blue-accent: #1565a8;
+  --green: #3f8f29;
+  --green-hover: #336f21;
+  --background: #f5f6f8;
+  --surface: #ffffff;
+  --border: #e1e4ea;
+  --text-primary: #1c2530;
+  --text-secondary: #66707c;
+  --danger: #b3413a;
+  --danger-soft: #f5e3e1;
+
+  --card-radius: 12px;
+  --field-radius: 8px;
+  --button-radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+/* Header */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 76px;
+  padding: 0 24px;
+  background: var(--navy);
+  color: #ffffff;
+}
+
+.topbar-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.topbar-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.topbar-text strong {
+  font-size: 18px;
+}
+
+.topbar-text span {
+  font-size: 12px;
+  color: #b7c6da;
+}
+
+/* Layout */
+.app {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 16px 24px 32px;
+}
+
+.columns {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.columns > .card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 16px 18px 18px;
+  margin-top: 16px;
+}
+
+.columns > .card {
+  margin-top: 0;
+}
+
+.card-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Fields */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.field-label {
+  flex: 0 0 88px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.field-inputs {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-input {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--field-radius);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--blue-accent);
+  box-shadow: 0 0 0 2px rgba(21, 101, 168, 0.15);
+}
+
+.field-input::placeholder {
+  color: #a7aeb8;
+}
+
+/* Items */
+.items-head,
+.items-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 120px 90px;
+  gap: 8px;
+  align-items: center;
+}
+
+.items-head {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.items-head > span:nth-child(2),
+.items-head > span:nth-child(3) {
+  text-align: center;
+}
+
+.items-row {
+  margin-bottom: 8px;
+}
+
+/* Buttons */
+.button {
+  height: 32px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--button-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.button-ghost {
+  color: var(--blue-accent);
+  background: transparent;
+  border-color: var(--blue-accent);
+}
+
+.button-ghost:hover {
+  background: var(--navy-soft);
+}
+
+.button-danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--danger);
+  font-size: 11px;
+  height: 28px;
+  padding: 0 10px;
+}
+
+.button-danger:hover {
+  background: var(--danger-soft);
+}
+
+.button-primary,
+.button-success {
+  flex: 1 1 0;
+  height: 46px;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.button-primary {
+  background: var(--navy);
+}
+
+.button-primary:hover {
+  background: var(--navy-hover);
+}
+
+.button-success {
+  background: var(--green);
+}
+
+.button-success:hover {
+  background: var(--green-hover);
+}
+
+/* Footer */
+.footer {
+  margin-top: 20px;
+}
+
+.totals {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.total-hours {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.total {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+}
+
+/* Error banner - replaces the desktop app's messagebox.showerror */
+.errors {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--card-radius);
+  color: #7a2b25;
+}
+
+.errors-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.errors ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 720px) {
+  .columns {
+    flex-direction: column;
+  }
+
+  .columns > .card + .card {
+    margin-top: 16px;
+  }
+
+  .items-head {
+    display: none;
+  }
+
+  .items-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
